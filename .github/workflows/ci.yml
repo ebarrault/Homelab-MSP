@@ -1,0 +1,33 @@
+name: Contrôle des scripts
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  bash:
+    name: ShellCheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Analyse des scripts Bash
+        run: shellcheck --severity=warning scripts/proxmox/*.sh scripts/linux/*.sh
+      - name: Exécution à blanc de la création des VM
+        run: |
+          qm() { return 1; }   # simule un hôte sans VM
+          export -f qm
+          bash scripts/proxmox/create-vms.sh --dry-run
+
+  powershell:
+    name: PSScriptAnalyzer
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Analyse des scripts PowerShell
+        shell: pwsh
+        run: |
+          Install-Module PSScriptAnalyzer -Force -Scope CurrentUser
+          $r = Invoke-ScriptAnalyzer -Path scripts/windows -Severity Error, Warning -ExcludeRule PSAvoidUsingWriteHost, PSUseShouldProcessForStateChangingFunctions
+          $r | Format-Table RuleName, Severity, ScriptName, Line, Message -AutoSize -Wrap
+          if ($r | Where-Object Severity -eq 'Error') { exit 1 }
+

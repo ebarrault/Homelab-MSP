@@ -1,0 +1,24 @@
+# /etc/network/interfaces du serveur Proxmox
+# vmbr0 : pont vers le réseau de la box (WAN de pfSense, interface d'administration de Proxmox)
+# vmbr1 : pont interne sans carte physique, "VLAN aware" : les VLAN 10/20 n'existent que dans le labo
+
+auto lo
+iface lo inet loopback
+
+iface enp1s0 inet manual
+
+auto vmbr0
+iface vmbr0 inet static
+        address 192.168.1.10/24
+        gateway 192.168.1.1
+        bridge-ports enp1s0
+        bridge-stp off
+        bridge-fd 0
+
+auto vmbr1
+iface vmbr1 inet manual
+        bridge-ports none
+        bridge-stp off
+        bridge-fd 0
+        bridge-vlan-aware yes
+        bridge-vids 10 20

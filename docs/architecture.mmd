@@ -1,0 +1,32 @@
+flowchart TB
+  NET((Internet)) --- BOX["Box FAI<br/>192.168.1.1"]
+  BOX --- |"192.168.1.0/24"| PVE
+
+  subgraph PVE["Serveur Proxmox VE 8 — 192.168.1.10 (vmbr0)"]
+    direction TB
+    PF["pfSense 2.7<br/>WAN 192.168.1.11<br/>pare-feu · NAT · DNS · VPN WireGuard"]
+
+    subgraph SRV["VLAN 10 · SERVEURS · 10.0.10.0/24 (vmbr1)"]
+      DC["DC01 · Windows Server 2022<br/>10.0.10.10<br/>AD DS · DNS · DHCP · GPO · LAPS"]
+      GLPI["GLPI 10 · Debian 12<br/>10.0.10.20<br/>parc + tickets"]
+      ZBX["Zabbix 7.0 LTS · Debian 12<br/>10.0.10.21<br/>supervision"]
+      PBS["Proxmox Backup Server<br/>10.0.10.30<br/>sauvegardes"]
+    end
+
+    subgraph POS["VLAN 20 · POSTES · 10.0.20.0/24 (vmbr1)"]
+      CL1["CLIENT01 · Windows 11<br/>DHCP"]
+      CL2["CLIENT02 · Windows 11<br/>DHCP"]
+    end
+
+    PF --- |"10.0.10.1"| SRV
+    PF --- |"10.0.20.1 · relais DHCP"| POS
+  end
+
+  ADM["Poste d'administration<br/>(à distance)"] -. "WireGuard 51820/udp · 10.0.99.0/24" .-> PF
+
+  classDef fw fill:#fee2e2,stroke:#b91c1c,color:#111
+  classDef win fill:#dbeafe,stroke:#1d4ed8,color:#111
+  classDef lin fill:#dcfce7,stroke:#15803d,color:#111
+  class PF fw
+  class DC,CL1,CL2 win
+  class GLPI,ZBX,PBS lin
